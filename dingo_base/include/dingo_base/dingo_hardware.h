@@ -104,7 +104,7 @@ public:
   /** Populates the internal joint state struct from the most recent CAN data
    *  received from the motor controller. Called from the controller thread.
    */
-  void updateJointsFromHardware();
+  bool updateJointsFromHardware();
 
   /** Populates and publishes Drive message based on the controller outputs.
    *  Called from the controller thread.

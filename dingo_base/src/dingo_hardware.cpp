@@ -211,17 +211,24 @@ void DingoHardware::requestData()
   }
 }
 
-void DingoHardware::updateJointsFromHardware()
+bool DingoHardware::updateJointsFromHardware()
 {
+  for (auto& driver : drivers_){
+    if (!driver.updatedPosition()){
+      return false;
+    }
+  }
   uint8_t index = 0;
   for (auto& driver : drivers_)
   {
+    driver.resetUpdatedStates();
     Joint* f = &joints_[index];
     f->effort = driver.lastCurrent();
     f->position = driver.lastPosition();
     f->velocity = driver.lastSpeed();
     index++;
   }
+  return true;
 }
 
 void DingoHardware::command()

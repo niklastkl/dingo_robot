@@ -59,24 +59,25 @@ using boost::asio::ip::address;
 void control(ros::Rate rate, dingo_base::DingoHardware* robot, controller_manager::ControllerManager* cm)
 {
   std::chrono::steady_clock::time_point last_time = std::chrono::steady_clock::now();
-
   while (ros::ok())
   {
-    // Calculate monotonic time elapsed
-    std::chrono::steady_clock::time_point this_time = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_duration = this_time - last_time;
-    ros::Duration elapsed(elapsed_duration.count());
-    last_time = this_time;
-
     if (robot->isActive())
     {
       robot->powerHasNotReset();
-      robot->updateJointsFromHardware();
+      //robot->updateJointsFromHardware();
+      if (!robot->updateJointsFromHardware()){
+        continue;
+      }
     }
     else
     {
       robot->configure();
     }
+    // Calculate monotonic time elapsed
+    std::chrono::steady_clock::time_point this_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_duration = this_time - last_time;
+    ros::Duration elapsed(elapsed_duration.count());
+    last_time = this_time;
 
     cm->update(ros::Time::now(), elapsed, robot->inReset());
 
@@ -88,8 +89,9 @@ void control(ros::Rate rate, dingo_base::DingoHardware* robot, controller_manage
     else
     {
       robot->verify();
+      rate.sleep();
     }
-    rate.sleep();
+    //rate.sleep();
   }
 }
 
