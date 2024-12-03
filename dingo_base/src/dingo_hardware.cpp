@@ -241,6 +241,16 @@ void DingoHardware::command()
   }
 }
 
+void DingoHardware::commandZero()
+{
+  uint8_t i = 0;
+  for (auto& driver : drivers_)
+  {
+    driver.commandSpeed(0.0);
+    i++;
+  }
+}
+
 void DingoHardware::canRead()
 {
   puma_motor_driver::Message recv_msg;

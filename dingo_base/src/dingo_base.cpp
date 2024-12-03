@@ -56,42 +56,49 @@ using boost::asio::ip::address;
  *  @param[in] robot Handle to the hardware for the robot
  *  @param[in] cm Handle to the controller manager
  */
-void control(ros::Rate rate, dingo_base::DingoHardware* robot, controller_manager::ControllerManager* cm)
+void control(ros::Duration joint_state_timeout, dingo_base::DingoHardware* robot, controller_manager::ControllerManager* cm)
 {
   std::chrono::steady_clock::time_point last_time = std::chrono::steady_clock::now();
   while (ros::ok())
   {
+    bool updated_joints = false;
     if (robot->isActive())
     {
       robot->powerHasNotReset();
-      //robot->updateJointsFromHardware();
-      if (!robot->updateJointsFromHardware()){
-        continue;
-      }
+      updated_joints = robot->updateJointsFromHardware();
     }
     else
     {
       robot->configure();
     }
+    
+
     // Calculate monotonic time elapsed
     std::chrono::steady_clock::time_point this_time = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed_duration = this_time - last_time;
     ros::Duration elapsed(elapsed_duration.count());
-    last_time = this_time;
-
-    cm->update(ros::Time::now(), elapsed, robot->inReset());
-
+    if (updated_joints){
+      last_time = this_time;
+      cm->update(ros::Time::now(), elapsed, robot->inReset());
+    }
+    if (!updated_joints && elapsed <= joint_state_timeout){
+      continue;
+    }
     if (robot->isActive())
     {
-      robot->command();
+      if (elapsed > joint_state_timeout){
+        robot->commandZero();
+        std::this_thread::sleep_for(std::chrono::milliseconds(int(joint_state_timeout.toSec() / 2)));
+      } else {
+        robot->command();
+      }
       robot->requestData();
     }
     else
     {
       robot->verify();
-      rate.sleep();
+      std::this_thread::sleep_for(std::chrono::milliseconds(40));
     }
-    //rate.sleep();
   }
 }
 
@@ -154,7 +161,8 @@ int main(int argc, char* argv[])
   // Background thread for the controls callback.
   ros::NodeHandle controller_nh("");
   controller_manager::ControllerManager cm(&dingo, controller_nh);
-  std::thread control_thread(&control, ros::Rate(25), &dingo, &cm);
+  ros::Duration joint_state_timeout(0.5);
+  std::thread control_thread(&control, joint_state_timeout, &dingo, &cm);
 
   // Lighting control.
   dingo_base::DingoLighting* lighting;

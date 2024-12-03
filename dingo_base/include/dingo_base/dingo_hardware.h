@@ -111,6 +111,11 @@ public:
    */
   void command();
 
+  /** Sends a zero-velocity command to all drivers to stop the robot.
+   *  Called from the controller thread.
+   */
+  void commandZero();
+
   /** Processes all received messages through the connected driver instances. */
   void canRead();
 
