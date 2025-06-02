@@ -17,6 +17,7 @@ main_job.install()
 os.system("sudo  sed -i '/After/c After=can-udp-bridge.service' /lib/systemd/system/ros.service")
 os.system("sudo  sed -i '/ExecStart/a Restart=on-failure' /lib/systemd/system/ros.service")
 os.system("sudo  sed -i '/Restart/a RestartSec=5' /lib/systemd/system/ros.service")
+os.system("sudo  sed -i 's/^\\(.*ROS_HOSTNAME=.*\\)/# \\1/' /usr/sbin/ros-start")
 
 class DingoExtras(robot_upstart.providers.Generic):
     def post_install(self):
